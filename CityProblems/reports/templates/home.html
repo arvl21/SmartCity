@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h1>Система отслеживания городских проблем</h1>
+        <p class="lead">Помогите сделать наш город лучше!</p>
+        
+        <!-- Карта -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h3 class="card-title">Карта проблем</h3>
+                <div id="map" class="map-container"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Кнопка "Сообщить о проблеме" -->
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title">Сообщить о проблеме</h3>
+                <a href="/create/" class="btn btn-primary btn-block">Создать заявку</a>
+            </div>
+        </div>
+        
+        <!-- Список последних проблем -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <h3 class="card-title">Последние проблемы</h3>
+                {% if latest_problems %}
+                    <div class="list-group">
+                        {% for problem in latest_problems %}
+                            <div class="list-group-item">
+                                <h5>{{ problem.problem_type.name }}</h5>
+                                <p>{{ problem.short_description }}</p>
+                                <small>{{ problem.address }}</small>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p>Проблем пока нет</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Ждем загрузки API Яндекс.Карт
+    ymaps.ready(init);
+
+    function init() {
+        // Создаем карту с центром в Москве
+        const map = new ymaps.Map('map', {
+            center: [55.751244, 37.618423],
+            zoom: 13,
+            controls: ['zoomControl', 'typeSelector', 'fullscreenControl']
+        });
+
+        // Загрузка проблем с сервера
+        function loadProblems() {
+            fetch('/api/problems/')
+                .then(response => response.json())
+                .then(problems => {
+                    problems.forEach(problem => {
+                        if (problem.latitude && problem.longitude) {
+                            // Создаем метку с цветом в зависимости от статуса
+                            const placemark = new ymaps.Placemark(
+                                [problem.latitude, problem.longitude],
+                                {
+                                    hintContent: problem.problem_type.name,
+                                    balloonContent: `
+                                        <b>${problem.problem_type.name}</b><br>
+                                        ${problem.short_description}<br>
+                                        <small>Статус: ${problem.status}</small>
+                                    `
+                                },
+                                {
+                                    preset: getStatusIcon(problem.status),
+                                    iconColor: getStatusColor(problem.status)
+                                }
+                            );
+                            map.geoObjects.add(placemark);
+                        }
+                    });
+                })
+                .catch(error => console.error('Ошибка загрузки проблем:', error));
+        }
+
+        // Функция для определения цвета метки
+        function getStatusColor(status) {
+            const colors = {
+                'new': '#ff0000',      // красный
+                'in_progress': '#ff9900', // оранжевый
+                'resolved': '#00aa00'   // зеленый
+            };
+            return colors[status] || '#0000ff'; // синий по умолчанию
+        }
+
+        // Функция для определения иконки
+        function getStatusIcon(status) {
+            return 'islands#' + (status === 'resolved' ? 'green' : 'red') + 'Icon';
+        }
+
+        // Загружаем проблемы при инициализации
+        loadProblems();
+
+        // Автоматическое обновление каждые 5 минут
+        setInterval(loadProblems, 300000);
+    }
+</script>
+{% endblock %}

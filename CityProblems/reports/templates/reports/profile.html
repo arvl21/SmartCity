@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Личный кабинет</h2>
+    <p>Имя пользователя: {{ user.username }}</p>
+    <p>Email: {{ user.email }}</p>
+    <p>Телефон: {{ user.phone }}</p>
+
+    <h3 class="mt-4">Ваши заявки</h3>
+    <ul class="list-group">
+        {% for problem in user.problem_set.all %}
+            <li class="list-group-item">
+                <a href="{% url 'problem_detail' problem.id %}">
+                    {{ problem.problem_type }}: {{ problem.short_description }}
+                </a>
+                <span class="badge bg-{{ problem.status_color }} float-end">
+                    {{ problem.get_status_display }}
+                </span>
+            </li>
+        {% empty %}
+            <li class="list-group-item">У вас пока нет заявок</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

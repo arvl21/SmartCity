@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h2>{{ problem.problem_type.name }}</h2>
+            <span class="badge bg-{{ problem.status_color }}">
+                {{ problem.get_status_display }}
+            </span>
+        </div>
+        <div class="card-body">
+            <h5>{{ problem.short_description }}</h5>
+            <p>{{ problem.full_description }}</p>
+            <p><strong>Адрес:</strong> {{ problem.address }}</p>
+
+            <!-- Блок для отображения фотографий -->
+            <div class="mt-4">
+                <h5>Фотографии проблемы</h5>
+                {% if problem.images.all %}
+                    <div class="row">
+                        {% for image in problem.images.all %}
+                            <div class="col-md-4 mb-3">
+                                <img src="{{ image.image.url }}"
+                                     class="img-fluid rounded"
+                                     alt="Фото проблемы {{ problem.id }}">
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">Фотографии не прикреплены</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
